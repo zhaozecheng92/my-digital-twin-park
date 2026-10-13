@@ -1,0 +1,30 @@
+:root {
+  --park-bg: #0b1220;
+  --park-panel: #121b2e;
+  --park-line: rgba(94, 234, 212, 0.18);
+  --park-accent: #22d3ee;
+  --park-text: #e2e8f0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  width: 100%;
+  min-height: 100%;
+}
+
+body {
+  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  color: #1f2937;
+  background: #f3f6fb;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
