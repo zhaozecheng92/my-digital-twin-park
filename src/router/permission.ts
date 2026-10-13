@@ -22,10 +22,7 @@ export function filterAsyncRoutes(
       if (cloned.children.length === 0) continue
       if (cloned.redirect && cloned.children[0]) {
         const parentPath = cloned.path === '/' ? '' : cloned.path
-        cloned.redirect = `${parentPath}/${cloned.children[0].path}`.replace(
-          /\/+/g,
-          '/',
-        )
+        cloned.redirect = `${parentPath}/${cloned.children[0].path}`.replace(/\/+/g, '/',)
       }
     }
 

@@ -25,7 +25,7 @@ export const constantRoutes: RouteRecordRaw[] = [
 
 /**
  * 动态路由：meta.roles 决定谁能看到该菜单。
- * 登录后按角色 filter + router.addRoute，这就是简历上的 RBAC 动态路由。
+ * 登录后按角色 filter + router.addRoute，这就是 RBAC 动态路由。
  */
 export const asyncRoutes: RouteRecordRaw[] = [
   {
