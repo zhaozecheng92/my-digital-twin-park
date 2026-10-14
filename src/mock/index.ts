@@ -101,6 +101,15 @@ export async function dispatchMock(config: AxiosRequestConfig): Promise<ApiResul
     return ok(result)
   }
 
+  const deviceId = matchId(path, '/device')
+  if (method === 'GET' && deviceId !== null) {
+    const user = requireUser(config)
+    if (!isUserInfo(user)) return user
+    const target = devices.find((item) => item.id === deviceId)
+    if (!target) return fail('设备不存在', 404)
+    return ok(target)
+  }
+
   if (method === 'POST' && path === '/device') {
     const user = requireUser(config)
     if (!isUserInfo(user)) return user
@@ -118,12 +127,11 @@ export async function dispatchMock(config: AxiosRequestConfig): Promise<ApiResul
     return ok(created, '新增成功')
   }
 
-  const updateId = matchId(path, '/device')
-  if (method === 'PUT' && updateId !== null) {
+  if (method === 'PUT' && deviceId !== null) {
     const user = requireUser(config)
     if (!isUserInfo(user)) return user
     if (!user.permissions.includes('device:edit')) return fail('无权编辑设备', 403)
-    const target = devices.find((item) => item.id === updateId)
+    const target = devices.find((item) => item.id === deviceId)
     if (!target) return fail('设备不存在', 404)
     const body = readBody<DeviceForm>(config)
     target.name = body.name.trim()
@@ -133,13 +141,13 @@ export async function dispatchMock(config: AxiosRequestConfig): Promise<ApiResul
     return ok(target, '更新成功')
   }
 
-  if (method === 'DELETE' && updateId !== null) {
+  if (method === 'DELETE' && deviceId !== null) {
     const user = requireUser(config)
     if (!isUserInfo(user)) return user
     if (!user.permissions.includes('device:delete')) return fail('无权删除设备', 403)
-    const exists = devices.some((item) => item.id === updateId)
+    const exists = devices.some((item) => item.id === deviceId)
     if (!exists) return fail('设备不存在', 404)
-    devices = devices.filter((item) => item.id !== updateId)
+    devices = devices.filter((item) => item.id !== deviceId)
     return ok(true, '删除成功')
   }
 

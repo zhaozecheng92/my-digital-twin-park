@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useRoute, useRouter, type RouteRecordRaw } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
@@ -7,9 +7,12 @@ import { useUserStore } from '@/stores/user'
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
-const collapsed = ref(false)
-
-const activeMenu = computed(() => route.path)
+const activeMenu = computed(() => {
+  if (route.path.startsWith('/device/detail/')) {
+    return userStore.roles.includes('admin') ? '/device/list' : '/device/view'
+  }
+  return route.path
+})
 
 interface MenuNode {
   fullPath: string
@@ -86,18 +89,18 @@ async function handleLogout() {
 
 <template>
   <el-container class="layout">
-    <el-aside :width="collapsed ? '64px' : '220px'" class="aside">
-      <div class="brand">
+    <el-header class="header">
+      <router-link class="brand" to="/">
         <span class="brand-mark" />
-        <span v-show="!collapsed" class="brand-text">孪生园区后台</span>
-      </div>
+        <span class="brand-text">孪生园区后台</span>
+      </router-link>
       <el-menu
         :default-active="activeMenu"
-        :collapse="collapsed"
+        mode="horizontal"
         router
-        background-color="#0f172a"
-        text-color="#cbd5e1"
-        active-text-color="#22d3ee"
+        background-color="transparent"
+        text-color="#475569"
+        active-text-color="#4f70e8"
       >
         <template v-for="menu in menus" :key="menu.fullPath">
           <el-sub-menu v-if="menu.children?.length" :index="menu.fullPath">
@@ -126,81 +129,196 @@ async function handleLogout() {
           </el-menu-item>
         </template>
       </el-menu>
-    </el-aside>
-
-    <el-container>
-      <el-header class="header">
-        <el-button text @click="collapsed = !collapsed">
-          <el-icon>
-            <Fold v-if="!collapsed" />
-            <Expand v-else />
-          </el-icon>
-        </el-button>
-        <div class="header-title">{{ route.meta.title }}</div>
-        <div class="header-user">
-          <el-tag size="small" effect="dark" type="success">{{ userStore.roleLabel }}</el-tag>
-          <span>{{ userStore.nickname }}</span>
-          <el-button type="danger" link @click="handleLogout">退出</el-button>
-        </div>
-      </el-header>
-      <el-main class="main">
+      <div class="header-user">
+        <el-tag size="small" effect="plain" type="primary">{{ userStore.roleLabel }}</el-tag>
+        <span class="user-name">{{ userStore.nickname }}</span>
+        <el-button type="danger" link @click="handleLogout">退出</el-button>
+      </div>
+    </el-header>
+    <el-main class="main">
+      <div class="workspace">
         <router-view />
-      </el-main>
-    </el-container>
+      </div>
+    </el-main>
   </el-container>
 </template>
 
 <style scoped>
 .layout {
-  min-height: 100vh;
-}
-
-.aside {
-  background: #0f172a;
+  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
-  transition: width 0.2s ease;
+  background: #f2f3ff;
 }
 
 .brand {
-  height: 60px;
+  height: 64px;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0 16px;
-  color: #e2e8f0;
+  color: #334155;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  text-decoration: none;
 }
 
 .brand-mark {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  flex: 0 0 10px;
+  height: 10px;
   border-radius: 50%;
-  background: #22d3ee;
-  box-shadow: 0 0 12px #22d3ee;
+  background: #7188f5;
+  box-shadow: 0 0 0 5px rgba(113, 136, 245, 0.12);
+}
+
+.brand-text {
+  font-size: 15px;
 }
 
 .header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: #fff;
-  border-bottom: 1px solid #e5e7eb;
+  gap: 24px;
+  height: 64px;
+  padding: 0 28px;
+  background: rgba(255, 255, 255, 0.82);
+  border-bottom: 1px solid #e7e9f4;
+  backdrop-filter: blur(16px);
 }
 
-.header-title {
+.header :deep(.el-menu) {
+  min-width: 0;
   flex: 1;
-  font-size: 16px;
-  font-weight: 600;
+  height: 64px;
+  border-bottom: none;
+  background: transparent;
+}
+
+.header :deep(.el-menu--horizontal > .el-menu-item),
+.header :deep(.el-menu--horizontal > .el-sub-menu .el-sub-menu__title) {
+  height: 64px;
+  line-height: 64px;
+  border-bottom-width: 2px;
+  font-size: 14px;
+}
+
+.header :deep(.el-menu--horizontal > .el-menu-item.is-active),
+.header :deep(.el-menu--horizontal > .el-sub-menu.is-active .el-sub-menu__title) {
+  color: #4f70e8;
+  border-bottom-color: #7188f5;
 }
 
 .header-user {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 10px;
+  color: #475569;
+  font-size: 13px;
 }
 
 .main {
-  background: #f3f6fb;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  padding: 10px;
+  overflow: auto;
+  background: #f2f3ff;
+}
+
+.workspace {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: 7px;
+  border: 1px solid #eceef8;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 5px 20px rgba(73, 82, 146, 0.045);
+}
+
+@media (max-width: 900px) {
+  .header {
+    gap: 14px;
+    padding: 0 16px;
+  }
+
+  .brand {
+    gap: 8px;
+  }
+
+  .brand-text {
+    font-size: 14px;
+  }
+
+  .header-user {
+    gap: 7px;
+  }
+
+  .user-name {
+    display: none;
+  }
+
+  .main {
+    padding: 14px;
+  }
+
+  .workspace {
+    flex: 1;
+    padding: 14px;
+  }
+}
+
+@media (max-width: 600px) {
+  .header {
+    gap: 8px;
+    padding: 0 10px;
+  }
+
+  .brand-text {
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .header :deep(.el-menu) {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .header :deep(.el-menu--horizontal) {
+    width: 0;
+  }
+
+  .header :deep(.el-menu--horizontal > .el-menu-item),
+  .header :deep(.el-menu--horizontal > .el-sub-menu .el-sub-menu__title) {
+    padding: 0 10px;
+    font-size: 12px;
+  }
+
+  .header-user {
+    gap: 4px;
+  }
+
+  .header-user :deep(.el-tag) {
+    display: none;
+  }
+
+  .main {
+    padding: 10px;
+  }
+
+  .workspace {
+    min-height: 0;
+    padding: 10px;
+    border-radius: 10px;
+  }
 }
 </style>

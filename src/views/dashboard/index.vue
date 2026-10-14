@@ -27,7 +27,7 @@ onMounted(async () => {
 <template>
   <div class="page">
     <el-alert
-      :title="`当前身份：${userStore.roleLabel}。侧边栏菜单由角色动态生成（RBAC）。`"
+      :title="`当前身份：${userStore.roleLabel}。导航菜单由角色动态生成（RBAC）。`"
       type="success"
       show-icon
       :closable="false"

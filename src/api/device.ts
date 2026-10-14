@@ -8,6 +8,10 @@ export function fetchDeviceList(params: DeviceQuery) {
   )
 }
 
+export function fetchDeviceDetail(id: number) {
+  return request.get<ApiResult<DeviceItem>, ApiResult<DeviceItem>>(`/device/${id}`)
+}
+
 export function createDevice(data: DeviceForm) {
   return request.post<ApiResult<DeviceItem>, ApiResult<DeviceItem>>('/device', data)
 }

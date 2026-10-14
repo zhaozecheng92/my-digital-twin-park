@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { createDevice, deleteDevice, fetchDeviceList, updateDevice } from '@/api/device'
@@ -12,18 +13,29 @@ import {
 } from '@/utils/validate'
 
 const userStore = useUserStore()
+const router = useRouter()
 const loading = ref(false)
 const tableData = ref<DeviceItem[]>([])
 const total = ref(0)
 const dialogVisible = ref(false)
 const dialogTitle = ref('新增设备')
 const formRef = ref<FormInstance>()
+const tableContainer = ref<HTMLDivElement>()
+const tableBodyHeight = ref(0)
+let tableResizeObserver: ResizeObserver | undefined
+
+interface DeviceTableRow extends Partial<DeviceItem> {
+  id: number
+  placeholder?: boolean
+}
+
+const defaultRowHeight = 49
 
 const query = reactive({
   name: '',
   status: '' as DeviceStatus | '',
   page: 1,
-  pageSize: 8,
+  pageSize: 1,
 })
 
 const form = reactive<DeviceForm>({
@@ -85,6 +97,36 @@ const statusMap: Record<DeviceStatus, { label: string; type: 'success' | 'info' 
   warning: { label: '告警', type: 'warning' },
 }
 
+const displayRows = computed<DeviceTableRow[]>(() => [
+  ...tableData.value,
+  ...Array.from(
+    { length: Math.max(0, query.pageSize - tableData.value.length) },
+    (_, index) => ({ id: -(index + 1), placeholder: true }),
+  ),
+])
+
+function updateTableCapacity(reload = true) {
+  const container = tableContainer.value
+  if (!container) return
+
+  const table = container.querySelector('.el-table')
+  const headerHeight = table?.querySelector('.el-table__header-wrapper')?.clientHeight ?? 0
+  tableBodyHeight.value = Math.max(0, container.clientHeight - headerHeight)
+
+  const pageSize = Math.max(1, Math.floor(tableBodyHeight.value / defaultRowHeight))
+  if (pageSize === query.pageSize) return
+
+  query.pageSize = pageSize
+  query.page = 1
+  if (reload) void loadList()
+}
+
+function tableRowStyle() {
+  return {
+    height: `${tableBodyHeight.value / query.pageSize}px`,
+  }
+}
+
 async function loadList() {
   loading.value = true
   try {
@@ -134,6 +176,10 @@ function openEdit(row: DeviceItem) {
   dialogVisible.value = true
 }
 
+function openDetail(row: DeviceItem) {
+  void router.push({ name: 'DeviceDetail', params: { id: row.id } })
+}
+
 async function submitForm() {
   const valid = await formRef.value?.validate().catch(() => false)
   if (!valid) return
@@ -172,13 +218,23 @@ async function handleDelete(row: DeviceItem) {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await nextTick()
+  updateTableCapacity(false)
+  if (tableContainer.value) {
+    tableResizeObserver = new ResizeObserver(() => updateTableCapacity())
+    tableResizeObserver.observe(tableContainer.value)
+  }
   void loadList()
+})
+
+onBeforeUnmount(() => {
+  tableResizeObserver?.disconnect()
 })
 </script>
 
 <template>
-  <el-card shadow="never">
+  <el-card shadow="never" class="card">
     <el-form :inline="true" class="search" @submit.prevent="handleSearch">
       <el-form-item label="设备名">
         <el-input v-model="query.name" clearable placeholder="输入设备名筛选" />
@@ -197,29 +253,45 @@ onMounted(() => {
       </el-form-item>
     </el-form>
 
-    <el-table v-loading="loading" :data="tableData" stripe border>
-      <el-table-column prop="name" label="设备名" min-width="140" />
-      <el-table-column prop="model" label="型号" min-width="140" />
-      <el-table-column label="状态" width="110">
-        <template #default="{ row }">
-          <el-tag :type="statusMap[row.status as DeviceStatus].type">
-            {{ statusMap[row.status as DeviceStatus].label }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="area" label="所属区域" min-width="140" />
-      <el-table-column prop="createdAt" label="接入时间" min-width="170" />
-      <el-table-column v-if="userStore.hasPermission('device:edit') || userStore.hasPermission('device:delete')" label="操作" width="180" fixed="right">
-        <template #default="{ row }">
-          <el-button v-permission="'device:edit'" type="primary" link @click="openEdit(row)">
-            编辑
-          </el-button>
-          <el-button v-permission="'device:delete'" type="danger" link @click="handleDelete(row)">
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <div ref="tableContainer" class="table-container">
+      <el-table
+        class="table"
+        height="100%"
+        v-loading="loading"
+        :data="displayRows"
+        :row-style="tableRowStyle"
+        stripe
+        border
+      >
+        <el-table-column label="设备名" min-width="140" align="center" header-align="center">
+          <template #default="{ row }">
+            <el-button v-if="!row.placeholder" type="primary" link @click="openDetail(row)">
+              {{ row.name }}
+            </el-button>
+          </template>
+        </el-table-column>
+        <el-table-column prop="model" label="型号" min-width="140" align="center" header-align="center" />
+        <el-table-column label="状态" width="110" align="center" header-align="center">
+          <template #default="{ row }">
+            <el-tag v-if="row.status" :type="statusMap[row.status as DeviceStatus].type">
+              {{ statusMap[row.status as DeviceStatus].label }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="area" label="所属区域" min-width="140" align="center" header-align="center" />
+        <el-table-column prop="createdAt" label="接入时间" min-width="170" align="center" header-align="center" />
+        <el-table-column v-if="userStore.hasPermission('device:edit') || userStore.hasPermission('device:delete')" label="操作" width="180" fixed="right" align="center" header-align="center">
+          <template #default="{ row }">
+            <el-button v-if="!row.placeholder" v-permission="'device:edit'" type="primary" link @click="openEdit(row)">
+              编辑
+            </el-button>
+            <el-button v-if="!row.placeholder" v-permission="'device:delete'" type="danger" link @click="handleDelete(row)">
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
     <div class="pager">
       <el-pagination
@@ -262,10 +334,33 @@ onMounted(() => {
 .search {
   margin-bottom: 8px;
 }
+.card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.card :deep(.el-card__body) {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.table-container {
+  flex: 1;
+  min-height: 0;
+}
+
+.table {
+  display: flex;
+}
 
 .pager {
   display: flex;
   justify-content: flex-end;
-  margin-top: 16px;
+  margin-top: auto;
+  padding-top: 16px;
 }
 </style>

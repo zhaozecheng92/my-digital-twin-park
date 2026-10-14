@@ -73,6 +73,16 @@ export const asyncRoutes: RouteRecordRaw[] = [
           roles: ['visitor'],
         },
       },
+      {
+        path: 'detail/:id',
+        name: 'DeviceDetail',
+        component: () => import('@/views/device/detail.vue'),
+        meta: {
+          title: '设备详情',
+          hidden: true,
+          roles: ['admin', 'visitor'],
+        },
+      },
     ],
   },
   {
@@ -95,4 +105,3 @@ export const asyncRoutes: RouteRecordRaw[] = [
     ],
   },
 ]
-
