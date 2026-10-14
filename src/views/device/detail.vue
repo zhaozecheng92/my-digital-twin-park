@@ -77,9 +77,9 @@ watch(() => route.params.id, () => {
 </template>
 
 <style scoped>
-.detail-card {
-  /* min-height: calc(100vh - 100px); */
-}
+/* .detail-card {
+  min-height: calc(100vh - 100px);
+} */
 
 .detail-header {
   display: flex;

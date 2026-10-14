@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { fetchDeviceList } from '@/api/device'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
+const router = useRouter()
 const total = ref(0)
 const online = ref(0)
 const warning = ref(0)
@@ -26,6 +28,10 @@ onMounted(async () => {
 
 <template>
   <div class="page">
+    <div class="page-heading">
+      <h1>园区工作台</h1>
+      <el-button type="primary" @click="router.push('/visualization')">打开可视化大屏</el-button>
+    </div>
     <el-alert
       :title="`当前身份：${userStore.roleLabel}。导航菜单由角色动态生成（RBAC）。`"
       type="success"
@@ -61,6 +67,18 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.page-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.page-heading h1 {
+  margin: 0;
+  color: #1f2937;
+  font-size: 22px;
 }
 
 .cards {

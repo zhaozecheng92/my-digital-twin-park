@@ -4,6 +4,12 @@ const Layout = () => import('@/layouts/AdminLayout.vue')
 
 export const constantRoutes: RouteRecordRaw[] = [
   {
+    path: '/visualization',
+    name: 'Visualization',
+    component: () => import('@/views/visualization/index.vue'),
+    meta: { hidden: true, title: '园区可视化大屏' },
+  },
+  {
     path: '/login',
     name: 'Login',
     component: () => import('@/views/login/index.vue'),
