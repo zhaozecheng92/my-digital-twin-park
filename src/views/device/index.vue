@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import {
+  computed,
+  nextTick,
+  onActivated,
+  onBeforeUnmount,
+  onDeactivated,
+  onMounted,
+  reactive,
+  ref,
+} from 'vue'
 import { useRouter } from 'vue-router'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -107,7 +116,7 @@ const displayRows = computed<DeviceTableRow[]>(() => [
 
 function updateTableCapacity(reload = true) {
   const container = tableContainer.value
-  if (!container) return
+  if (!container || !container.clientHeight) return
 
   const table = container.querySelector('.el-table')
   const headerHeight = table?.querySelector('.el-table__header-wrapper')?.clientHeight ?? 0
@@ -226,6 +235,16 @@ onMounted(async () => {
     tableResizeObserver.observe(tableContainer.value)
   }
   void loadList()
+})
+
+onActivated(async () => {
+  await nextTick()
+  updateTableCapacity()
+  if (tableContainer.value) tableResizeObserver?.observe(tableContainer.value)
+})
+
+onDeactivated(() => {
+  tableResizeObserver?.disconnect()
 })
 
 onBeforeUnmount(() => {

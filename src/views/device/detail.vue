@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { ArrowLeft } from '@element-plus/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
 import { fetchDeviceDetail } from '@/api/device'
 import { useUserStore } from '@/stores/user'
 import type { DeviceItem, DeviceStatus } from '@/types'
+import { navigateBack } from '@/utils/navigation'
 
 const route = useRoute()
 const router = useRouter()
@@ -20,6 +22,10 @@ const statusMap: Record<DeviceStatus, { label: string; type: 'success' | 'info' 
 const status = computed(() =>
   device.value ? statusMap[device.value.status] : undefined,
 )
+
+function goBack() {
+  navigateBack(router, userStore.roles.includes('admin') ? '/device/list' : '/device/view')
+}
 
 async function loadDetail() {
   const id = Number(route.params.id)
@@ -39,10 +45,6 @@ async function loadDetail() {
   }
 }
 
-function goBack() {
-  void router.push(userStore.roles.includes('admin') ? '/device/list' : '/device/view')
-}
-
 onMounted(() => {
   void loadDetail()
 })
@@ -56,8 +58,10 @@ watch(() => route.params.id, () => {
   <el-card shadow="never" class="detail-card" v-loading="loading">
     <template #header>
       <div class="detail-header">
+        <el-button type="primary" plain :icon="ArrowLeft" @click="goBack">
+          返回上一层
+        </el-button>
         <span>设备详情</span>
-        <el-button @click="goBack">返回列表</el-button>
       </div>
     </template>
 
@@ -84,7 +88,7 @@ watch(() => route.params.id, () => {
 .detail-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   font-weight: 600;
 }
 </style>

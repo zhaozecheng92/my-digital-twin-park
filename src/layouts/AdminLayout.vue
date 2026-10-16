@@ -97,6 +97,7 @@ async function handleLogout() {
       <el-menu
         :default-active="activeMenu"
         mode="horizontal"
+        :ellipsis="false"
         router
         background-color="transparent"
         text-color="#475569"
@@ -137,7 +138,11 @@ async function handleLogout() {
     </el-header>
     <el-main class="main">
       <div class="workspace">
-        <router-view />
+        <router-view v-slot="{ Component }">
+          <keep-alive>
+            <component :is="Component" :key="route.name?.toString() ?? route.path" />
+          </keep-alive>
+        </router-view>
       </div>
     </el-main>
   </el-container>
@@ -248,7 +253,7 @@ async function handleLogout() {
 
 @media (max-width: 900px) {
   .header {
-    gap: 14px;
+    gap: 10px;
     padding: 0 16px;
   }
 
@@ -285,7 +290,7 @@ async function handleLogout() {
   }
 
   .brand-text {
-    max-width: 90px;
+    max-width: 74px;
     overflow: hidden;
     text-overflow: ellipsis;
   }

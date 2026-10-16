@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onActivated, onBeforeUnmount, onDeactivated, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   ArrowRight,
@@ -37,6 +37,7 @@ const lastUpdated = ref('')
 
 let deviceStatusChart: ECharts | undefined
 let chartResizeObserver: ResizeObserver | undefined
+let dashboardActive = false
 
 const today = new Intl.DateTimeFormat('zh-CN', {
   year: 'numeric',
@@ -90,7 +91,8 @@ const quickActions = computed(() => [
 ])
 
 function updateDeviceStatusChart() {
-  if (!deviceStatusChart) return
+  const element = chartContainer.value
+  if (!deviceStatusChart || !dashboardActive || !element?.clientWidth || !element.clientHeight) return
 
   const option: EChartsOption = {
     animationDuration: 650,
@@ -146,6 +148,17 @@ function updateDeviceStatusChart() {
   deviceStatusChart.setOption(option, true)
 }
 
+function resizeDeviceStatusChart() {
+  const element = chartContainer.value
+  if (!dashboardActive || !element?.clientWidth || !element.clientHeight) return
+  if (deviceStatusChart) {
+    deviceStatusChart.resize()
+  } else {
+    deviceStatusChart = init(element, undefined, { renderer: 'canvas' })
+  }
+  updateDeviceStatusChart()
+}
+
 async function loadDeviceStats() {
   loading.value = true
   loadError.value = false
@@ -192,17 +205,31 @@ function statusType(status: DeviceStatus): 'success' | 'warning' | 'info' {
 }
 
 onMounted(() => {
-  const element = chartContainer.value
-  if (element) {
-    deviceStatusChart = init(element, undefined, { renderer: 'canvas' })
-    chartResizeObserver = new ResizeObserver(() => deviceStatusChart?.resize())
-    chartResizeObserver.observe(element)
-  }
-
+  chartResizeObserver = new ResizeObserver(resizeDeviceStatusChart)
   void loadDeviceStats()
 })
 
+onActivated(() => {
+  dashboardActive = true
+  const element = chartContainer.value
+  if (!element) return
+
+  chartResizeObserver?.observe(element)
+  void nextTick().then(() =>
+    requestAnimationFrame(() => {
+      if (!dashboardActive) return
+      resizeDeviceStatusChart()
+    }),
+  )
+})
+
+onDeactivated(() => {
+  dashboardActive = false
+  chartResizeObserver?.disconnect()
+})
+
 onBeforeUnmount(() => {
+  dashboardActive = false
   chartResizeObserver?.disconnect()
   deviceStatusChart?.dispose()
   deviceStatusChart = undefined
