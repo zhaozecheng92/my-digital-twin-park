@@ -224,6 +224,7 @@ async function handleLogout() {
 
 .main {
   display: flex;
+  align-items: flex-start;
   flex: 1;
   min-height: 0;
   width: 100%;
@@ -234,9 +235,10 @@ async function handleLogout() {
 
 .workspace {
   display: flex;
+  align-self: flex-start;
   flex: 1;
   flex-direction: column;
-  min-height: 0;
+  min-height: 100%;
   padding: 7px;
   border: 1px solid #eceef8;
   border-radius: 14px;
